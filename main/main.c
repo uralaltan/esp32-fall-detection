@@ -21,7 +21,7 @@
 #define IMU_NUM_HANDLE              4
 #define ADV_CONFIG_FLAG             (1 << 0)
 
-static const char *GATTS_TAG = "IMU_GATTS";
+static const char *GATTS_TAG = "GATTS";
 
 struct gatts_profile_inst {
     esp_gatts_cb_t gatts_cb;
@@ -154,7 +154,6 @@ static void imu_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt
                      param->add_char.status, param->add_char.attr_handle, param->add_char.char_uuid.uuid.uuid16);
             if (param->add_char.status == ESP_GATT_OK) {
                 gl_profile_tab[IMU_PROFILE_APP_ID].char_handle = param->add_char.attr_handle;
-
                 gl_profile_tab[IMU_PROFILE_APP_ID].descr_uuid.len = ESP_UUID_LEN_16;
                 gl_profile_tab[IMU_PROFILE_APP_ID].descr_uuid.uuid.uuid16 = ESP_GATT_UUID_CHAR_CLIENT_CONFIG;
                 esp_attr_value_t cccd_val = {
@@ -207,7 +206,7 @@ static void imu_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt
                     imu_indicate_enabled = true;
                 } else if (ccc_val == 0x0001) {
                     ESP_LOGI(GATTS_TAG,
-                             "IMU notifications enabled (char uses indications, but client might write this)");
+                             "IMU notifications enabled");
                     imu_indicate_enabled = false;
                 } else if (ccc_val == 0x0000) {
                     ESP_LOGI(GATTS_TAG, "IMU indications/notifications disabled");
@@ -263,7 +262,7 @@ static void imu_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt
             break;
 
         case ESP_GATTS_CONF_EVT:
-            ESP_LOGI(GATTS_TAG, "IMU Profile: Confirm receive (indication ack), status %d, handle %d, conn_id %d",
+            ESP_LOGI(GATTS_TAG, "IMU Profile: Confirm receive, status %d, handle %d, conn_id %d",
                      param->conf.status, param->conf.handle, param->conf.conn_id);
             if (param->conf.status != ESP_GATT_OK) {
                 ESP_LOGE(GATTS_TAG, "IMU Profile: Indication confirmation failed, status %d", param->conf.status);
@@ -377,14 +376,12 @@ static void imu_task() {
             sizeof(imu_data),
             imu_data);
 
-        imu_read_and_print();
-        vTaskDelay(pdMS_TO_TICKS(200));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 
 void app_main(void) {
-    esp_err_t ret;
-    ret = nvs_flash_init();
+    esp_err_t ret = nvs_flash_init();
 
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
@@ -396,6 +393,7 @@ void app_main(void) {
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
+
     ret = esp_bt_controller_init(&bt_cfg);
     if (ret) {
         ESP_LOGE(GATTS_TAG, "%s initialize controller failed: %s", __func__, esp_err_to_name(ret));
@@ -450,7 +448,6 @@ void app_main(void) {
     }
 
     xTaskCreate(imu_task, "IMU_Task", 4096, NULL, 5, NULL);
-
     ESP_LOGI(GATTS_TAG, "BLE IMU Sensor Initialized and Started.");
 }
 

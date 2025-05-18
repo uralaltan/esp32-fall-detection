@@ -84,19 +84,16 @@ void imu_read_and_print(void) {
 
     ESP_LOGI(TAG, "Acc: %.2f g, %.2f g, %.2f g\n", ax * a_res, ay * a_res, az * a_res);
     ESP_LOGI(TAG, "Gyr: %.2f °/s, %.2f °/s, %.2f °/s\n", gx * g_res, gy * g_res, gz * g_res);
-
-    // printf("Acc: %.2f g, %.2f g, %.2f g\n", ax * a_res, ay * a_res, az * a_res);
-    // printf("Gyr: %.2f °/s, %.2f °/s, %.2f °/s\n", gx * g_res, gy * g_res, gz * g_res);
 }
 
 void imu_read_raw(int16_t raw[6]) {
     uint8_t buf[14];
     ESP_ERROR_CHECK(read_regs(0x3B, buf, sizeof(buf)));
 
-    raw[0] = (int16_t) ((buf[0] << 8) | buf[1]); /* ax */
-    raw[1] = (int16_t) ((buf[2] << 8) | buf[3]); /* ay */
-    raw[2] = (int16_t) ((buf[4] << 8) | buf[5]); /* az */
-    raw[3] = (int16_t) ((buf[8] << 8) | buf[9]); /* gx */
-    raw[4] = (int16_t) ((buf[10] << 8) | buf[11]); /* gy */
-    raw[5] = (int16_t) ((buf[12] << 8) | buf[13]); /* gz */
+    raw[0] = (int16_t) ((buf[0] << 8) | buf[1]);
+    raw[1] = (int16_t) ((buf[2] << 8) | buf[3]);
+    raw[2] = (int16_t) ((buf[4] << 8) | buf[5]);
+    raw[3] = (int16_t) ((buf[8] << 8) | buf[9]);
+    raw[4] = (int16_t) ((buf[10] << 8) | buf[11]);
+    raw[5] = (int16_t) ((buf[12] << 8) | buf[13]);
 }

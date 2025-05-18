@@ -53,11 +53,6 @@ static bool imu_indicate_enabled = false;
 static bool imu_svc_created = false;
 static uint8_t adv_config_done = 0;
 
-static uint8_t adv_service_uuid_16[2] = {
-    (IMU_SVC_UUID & 0xFF),
-    (IMU_SVC_UUID >> 8) & 0xFF
-};
-
 static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp = false,
     .include_name = true,
@@ -284,7 +279,6 @@ static void imu_gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt
                      param->stop.service_handle);
             break;
         case ESP_GATTS_DELETE_EVT:
-            // ** THIS IS THE LINE IN QUESTION. VERIFY 'delete_svc' AGAINST YOUR ESP-IDF's esp_gatts_api.h **
             ESP_LOGI(GATTS_TAG, "IMU Profile: Service deleted, status %d, service_handle %d",
                      param->del.status, param->del.service_handle);
             break;
@@ -363,9 +357,8 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     }
 }
 
-static void imu_task(void *pvParameters) {
+static void imu_task() {
     ESP_LOGI(GATTS_TAG, "IMU Task Started");
-
     ESP_LOGI(GATTS_TAG, "Initializing IMU sensor…");
     ESP_ERROR_CHECK(imu_init());
 
@@ -375,25 +368,31 @@ static void imu_task(void *pvParameters) {
     ESP_LOGI(GATTS_TAG, "IMU Service ready, proceeding with IMU task loop.");
 
     while (1) {
-        imu_read_and_print();
+        int16_t raw[6];
+        imu_read_raw(raw);
+        memcpy(imu_data, raw, sizeof(imu_data));
 
+        esp_ble_gatts_set_attr_value(
+            gl_profile_tab[IMU_PROFILE_APP_ID].char_handle,
+            sizeof(imu_data),
+            imu_data);
+
+        imu_read_and_print();
         vTaskDelay(pdMS_TO_TICKS(200));
     }
 }
 
 void app_main(void) {
     esp_err_t ret;
-
     ret = nvs_flash_init();
+
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
+
     ESP_ERROR_CHECK(ret);
-
     ESP_LOGI(GATTS_TAG, "IMU init function call placeholder. Implement imu_init() if needed.");
-
-
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
     esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();

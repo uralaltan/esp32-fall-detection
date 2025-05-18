@@ -1,6 +1,4 @@
-idf_component_register(
-        SRCS
-        "esp32-fall-detection.c"
-        "imu.c"
-        INCLUDE_DIRS "."
-)
+file(GLOB_RECURSE srcs "main.c" "src/*.c")
+
+idf_component_register(SRCS "${srcs}"
+        INCLUDE_DIRS "./include")

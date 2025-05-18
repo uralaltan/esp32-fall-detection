@@ -9,4 +9,6 @@ esp_err_t imu_init(void);
 
 void imu_read_and_print(void);
 
+void imu_read_raw(int16_t raw[6]);
+
 #endif
